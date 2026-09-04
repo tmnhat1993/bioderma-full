@@ -16,5 +16,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="vi"><body>{children}<Suspense fallback={null}><PreviewNavigator /></Suspense></body></html>;
+  const showPreviewNavigator = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENABLE_PREVIEW_NAVIGATOR === 'true';
+  return <html lang="vi"><body>{children}{showPreviewNavigator&&<Suspense fallback={null}><PreviewNavigator /></Suspense>}</body></html>;
 }
