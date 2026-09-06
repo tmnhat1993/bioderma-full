@@ -28,6 +28,7 @@ const profiles = [
 ];
 
 const dayConfigs = [
+  { date: '2026-09-06', codes: { zone1: '1606', zone2: '2606', zone3: '3606' } },
   { date: '2026-09-07', codes: { zone1: '1707', zone2: '2707', zone3: '3707' } },
   { date: '2026-09-08', codes: { zone1: '1808', zone2: '2808', zone3: '3808' } },
   { date: '2026-09-09', codes: { zone1: '1909', zone2: '2909', zone3: '3909' } },
