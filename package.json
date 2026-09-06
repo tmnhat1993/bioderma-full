@@ -13,6 +13,7 @@
     "configure:firebase": "node scripts/configure-firebase.mjs",
     "test:firebase": "node --env-file=.env.local scripts/test-firebase.mjs",
     "seed:firebase": "node --env-file=.env.local scripts/seed-firebase.mjs",
+    "seed:upcoming": "node --env-file=.env.local scripts/seed-upcoming-days.mjs",
     "test:e2e-event": "node --env-file=.env.local scripts/test-e2e-event.mjs"
   },
   "dependencies": {
