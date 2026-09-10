@@ -8,6 +8,7 @@ export type Participant = {
   eventDate: string;
   consent: boolean;
   fullName?: string;
+  phone?: string;
   gender: Gender;
   ageRange?: AgeRange;
   createdAt: string;

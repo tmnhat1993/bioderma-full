@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import Image from 'next/image';
 import { BrandHeader } from '@/components/BrandHeader';
+import { ArtLink } from '@/components/ArtButton';
 
 export default function Home() {
   return (
@@ -14,7 +14,7 @@ export default function Home() {
         <div className="welcome-art" aria-hidden="true">
           <Image src="/assets/event/home-bg.webp" alt="" fill sizes="(max-width: 480px) 112vw, 540px" priority />
         </div>
-        <Link className="primary-button welcome-button" href="/register">Bắt đầu ngay <span aria-hidden="true">›</span></Link>
+        <ArtLink asset="start" label="Bắt đầu ngay" className="welcome-button" href="/register" />
       </section>
     </main>
   );

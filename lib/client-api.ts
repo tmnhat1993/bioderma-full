@@ -4,7 +4,7 @@ import { DEFAULT_EVENT_DAYS, STORAGE_KEYS, formatEventDate, getClientEventDate, 
 import type { AdminData, AgeRange, EventDay, Gender, InventoryEntry, Participant } from './types';
 import { firebaseAuth, hasFirebaseConfig } from './firebase-client';
 
-type RegistrationInput = { consent: boolean; fullName: string; gender: Gender; ageRange: AgeRange };
+type RegistrationInput = { consent: boolean; fullName: string; phone: string; gender: Gender; ageRange: AgeRange };
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -62,8 +62,8 @@ export async function registerParticipant(input: RegistrationInput): Promise<Par
   if (existing) return existing;
   const participant: Participant = {
     id: crypto.randomUUID(), publicCode: `BDM-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-    eventDate: getClientEventDate(), consent: input.consent, gender: input.gender,
-    ...(input.consent ? { fullName: input.fullName.trim(), ageRange: input.ageRange } : {}),
+    eventDate: getClientEventDate(), consent: input.consent, gender: input.gender, ageRange: input.ageRange,
+    ...(input.consent ? { fullName: input.fullName.trim(), phone: input.phone.replace(/[\s.-]/g, '') } : {}),
     createdAt: new Date().toISOString(), currentZone: 0,
   };
   const items = getDemoParticipants(); items.unshift(participant); saveDemoParticipants(items); setLocalParticipant(participant);
@@ -143,8 +143,8 @@ export async function adjustInventory(eventDate: EventDate, quantity: number, re
 }
 
 export function exportParticipantsCsv(items: Participant[]) {
-  const headers = ['Mã người dùng','Ngày','Consent','Họ tên','Giới tính','Độ tuổi','Thời gian','Zone 1','Zone 2','Quà Zone 2','Zone 3','Quà Zone 3'];
-  const rows = items.map((p) => [p.publicCode,p.eventDate,p.consent?'Đồng ý':'Không đồng ý',p.fullName || '',p.gender === 'female'?'Nữ':'Nam',p.ageRange || '',p.createdAt,p.zone1CompletedAt || '',p.zone2CompletedAt || '',p.zone2SampleStatus || '',p.zone3CompletedAt || '',p.zone3SampleStatus || '']);
+  const headers = ['Mã người dùng','Ngày','Consent','Họ tên','Số điện thoại','Giới tính','Độ tuổi','Thời gian','Zone 1','Zone 2','Quà Zone 2','Zone 3','Quà Zone 3'];
+  const rows = items.map((p) => [p.publicCode,p.eventDate,p.consent?'Đồng ý':'Không đồng ý',p.fullName || '',p.phone || '',p.gender === 'female'?'Nữ':'Nam',p.ageRange || '',p.createdAt,p.zone1CompletedAt || '',p.zone2CompletedAt || '',p.zone2SampleStatus || '',p.zone3CompletedAt || '',p.zone3SampleStatus || '']);
   const csv = '\uFEFF' + [headers,...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"','""')}"`).join(',')).join('\n');
   const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); link.download = `bioderma-participants-${new Date().toISOString().slice(0,10)}.csv`; link.click(); URL.revokeObjectURL(link.href);
 }
