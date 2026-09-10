@@ -141,9 +141,9 @@ try {
   });
   check('CMS điều chỉnh giảm tồn kho', rollbackAdjustment.status === 200 && rollbackAdjustment.body.remainingStock === 5);
 
-  const flow1 = await register(1, { consent: true, fullName: '[E2E] Consent', gender: 'female', ageRange: '18-24' });
+  const flow1 = await register(1, { consent: true, fullName: '[E2E] Consent', phone: '0900000010', gender: 'female', ageRange: '18-24' });
   check('Frontend tự lấy đúng ngày Việt Nam', flow1.participant.eventDate === eventDate, flow1.participant.eventDate);
-  const duplicate = await post('/api/participants', { deviceId: flow1.deviceId, consent: true, fullName: 'Duplicate', gender: 'male', ageRange: '45+' });
+  const duplicate = await post('/api/participants', { deviceId: flow1.deviceId, consent: true, fullName: 'Duplicate', phone: '0900000011', gender: 'male', ageRange: '45+' });
   check('Chặn đăng ký lặp trên cùng thiết bị', duplicate.status === 200 && duplicate.body.id === flow1.participant.id);
   const wrong = await verify(flow1, 1, '0000');
   check('Từ chối mã Zone sai', wrong.status === 400, `HTTP ${wrong.status}`);
@@ -153,11 +153,11 @@ try {
 
   const flow2 = await register(2, { consent: false, fullName: 'Không được lưu', gender: 'male', ageRange: '25-45' });
   const stored2 = await db.collection('participants').doc(flow2.participant.id).get();
-  check('Không consent không lưu họ tên và tuổi', !stored2.data().fullName && !stored2.data().ageRange);
+  check('Không consent chỉ lưu giới tính và tuổi, không lưu họ tên/số điện thoại', !stored2.data().fullName && !stored2.data().phone && stored2.data().gender === 'male' && stored2.data().ageRange === '25-45');
   const states2 = await complete(flow2, codes);
   check('Không consent vẫn hoàn thành và nhận sample', states2.every((state) => state.status === 200) && states2[1].body.rewardStatus === 'received' && states2[2].body.rewardStatus === 'received');
 
-  const flow3 = await register(3, { consent: true, fullName: '[E2E] Dừng Zone 1', gender: 'female', ageRange: '25-45' });
+  const flow3 = await register(3, { consent: true, fullName: '[E2E] Dừng Zone 1', phone: '0900000012', gender: 'female', ageRange: '25-45' });
   const skip = await verify(flow3, 2, codes.zone2);
   check('Không cho bỏ qua Zone trước', skip.status !== 200, `HTTP ${skip.status}`);
   const partial = await verify(flow3, 1, codes.zone1);

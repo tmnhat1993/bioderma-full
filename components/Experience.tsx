@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { AlertTriangle, Check, X } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import { BrandHeader } from './BrandHeader';
 import { ArtButton } from './ArtButton';
 import { getLocalParticipant, registerParticipant, verifyZone } from '@/lib/client-api';
@@ -19,13 +19,14 @@ export function RegisterFlow() {
   const preview = searchParams.get('preview');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState<Gender | ''>('');
-  const [ageRange, setAgeRange] = useState<AgeRange | ''>('');
+  const [gender, setGender] = useState<Gender | ''>('female');
+  const [ageRange, setAgeRange] = useState<AgeRange | ''>('25-45');
   const [shareConsent, setShareConsent] = useState(true);
   const [consentRequested, setConsentRequested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [anonymousRequested, setAnonymousRequested] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ fullName: false, phone: false, gender: false, ageRange: false });
   const consentOpen = preview === 'consent' || consentRequested;
   const anonymousOpen = preview === 'anonymous' || anonymousRequested;
 
@@ -33,7 +34,14 @@ export function RegisterFlow() {
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault(); setError('');
-    if (!gender || !ageRange || (shareConsent && (!fullName.trim() || !/^(0|\+84)\d{9,10}$/.test(phone.replace(/[\s.-]/g, ''))))) { setError('Vui lòng điền đầy đủ và đúng định dạng thông tin trước khi tiếp tục.'); return; }
+    const nextErrors = {
+      fullName: shareConsent && !fullName.trim(),
+      phone: shareConsent && !/^(0|\+84)\d{9,10}$/.test(phone.replace(/[\s.-]/g, '')),
+      gender: !gender,
+      ageRange: !ageRange,
+    };
+    setFieldErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) { setError('Vui lòng kiểm tra lại các thông tin được đánh dấu đỏ.'); return; }
     if (shareConsent) setConsentRequested(true); else setAnonymousRequested(true);
   };
 
@@ -49,17 +57,16 @@ export function RegisterFlow() {
     <main className="app-shell">
       <section className="mobile-stage form-stage">
         <BrandHeader compact />
-        <ExperienceTitle />
         <div className="form-card">
           <h1>THÔNG TIN KHÁCH HÀNG</h1>
           <form onSubmit={submit} noValidate>
             <div className="form-name-row">
-              <label>Họ và tên{shareConsent && <span aria-hidden="true">*</span>}<input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="NGUYỄN VĂN A" autoComplete="name" /></label>
-              <label>Số điện thoại{shareConsent && <span aria-hidden="true">*</span>}<input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" /></label>
+              <label>Họ và tên<span aria-hidden="true">*</span><input className={fieldErrors.fullName ? 'input-invalid' : ''} aria-invalid={fieldErrors.fullName} value={fullName} onChange={(e) => { setFullName(e.target.value); setFieldErrors((current) => ({ ...current, fullName: false })); }} placeholder="NGUYỄN VĂN A" autoComplete="name" /></label>
+              <label>Số điện thoại<input className={fieldErrors.phone ? 'input-invalid' : ''} aria-invalid={fieldErrors.phone} type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setFieldErrors((current) => ({ ...current, phone: false })); }} inputMode="tel" autoComplete="tel" /></label>
             </div>
-            <fieldset><legend>Giới tính</legend><div className="choice-row two"><label><input type="radio" name="gender" value="male" checked={gender==='male'} onChange={() => setGender('male')} /> Nam</label><label><input type="radio" name="gender" value="female" checked={gender==='female'} onChange={() => setGender('female')} /> Nữ</label></div></fieldset>
-            <fieldset><legend>Độ tuổi</legend><div className="choice-row three">{([['18-24','18 - 24 TUỔI'],['25-45','25 - 45 TUỔI'],['45+','TRÊN 45 TUỔI']] as const).map(([value,label]) => <label key={value}><input type="radio" name="age" value={value} checked={ageRange===value} onChange={() => setAgeRange(value)} />{label}</label>)}</div></fieldset>
-            <label className="consent-choice"><input type="checkbox" checked={shareConsent} onChange={(event) => setShareConsent(event.target.checked)} /><span><Check size={13} /></span>Tôi đồng ý chia sẻ thông tin cá nhân để tham gia trải nghiệm chương trình.</label>
+            <div className={`form-choice-group gender-field${fieldErrors.gender ? ' field-invalid' : ''}`} role="group" aria-label="Giới tính"><p>Giới tính<span aria-hidden="true">*</span></p><div className="choice-row two"><label><input type="radio" name="gender" value="male" checked={gender==='male'} onChange={() => { setGender('male'); setFieldErrors((current) => ({ ...current, gender: false })); }} /> Nam</label><label><input type="radio" name="gender" value="female" checked={gender==='female'} onChange={() => { setGender('female'); setFieldErrors((current) => ({ ...current, gender: false })); }} /> Nữ</label></div></div>
+            <fieldset className={fieldErrors.ageRange ? 'field-invalid' : ''}><legend>Độ tuổi<span aria-hidden="true">*</span></legend><div className="choice-row three">{([['18-24','18 - 24 TUỔI'],['25-45','25 - 45 TUỔI'],['45+','TRÊN 45 TUỔI']] as const).map(([value,label]) => <label key={value}><input type="radio" name="age" value={value} checked={ageRange===value} onChange={() => { setAgeRange(value); setFieldErrors((current) => ({ ...current, ageRange: false })); }} />{label}</label>)}</div></fieldset>
+            <label className="consent-choice"><input type="checkbox" checked={shareConsent} onChange={(event) => { const checked = event.target.checked; setShareConsent(checked); if (!checked) setFieldErrors((current) => ({ ...current, fullName: false, phone: false })); }} /><span><Check size={13} /></span>Tôi đồng ý chia sẻ thông tin cá nhân để tham gia trải nghiệm chương trình.</label>
             <p className="privacy-note">Nếu không đồng ý chia sẻ thông tin, bạn vẫn có thể tham gia trải nghiệm và thông tin sẽ được lưu dưới dạng ẩn danh.</p>
             {error && <p className="form-error" role="alert">{error}</p>}
             <ArtButton asset="join" label="Tham gia trải nghiệm" className="submit-button" type="submit" />
@@ -69,7 +76,6 @@ export function RegisterFlow() {
 
         {consentOpen && <div className="modal-backdrop" role="presentation">
           <section className="consent-modal" role="dialog" aria-modal="true" aria-labelledby="consent-title">
-            <button className="modal-close" type="button" aria-label="Đóng" onClick={() => preview ? router.replace('/register') : setConsentRequested(false)}><X size={18} /></button>
             <h2 id="consent-title">QUY ĐỊNH<br />CHIA SẺ THÔNG TIN</h2>
             <p>Thông tin cá nhân được thu thập nhằm xác nhận người tham gia, tổng hợp kết quả khảo sát, liên hệ khi cần thiết về chương trình và chăm sóc khách hàng theo phạm vi bạn đã đồng ý.</p>
             <p>Thông tin có thể bao gồm họ tên, giới tính, độ tuổi, thời điểm tham gia và câu trả lời khảo sát. Nếu bạn không đồng ý chia sẻ thông tin, hệ thống chỉ lưu kết quả khảo sát dưới dạng ẩn danh.</p>
@@ -87,9 +93,9 @@ export function RegisterFlow() {
 }
 
 const zoneContent = {
-  1: { title: 'BÍ KÍP CHĂM DA SẦU “MỤN”', text: 'Thao tác trên iPad và điền tên để sẵn sàng cùng BIODERMA gửi bí kíp đến hội chăm da sầu “mụn”.', image: '/assets/event/zone-1-illu.webp', width: 1000, height: 563 },
-  2: { title: 'KHOA HỌC DA SẦU “MỤN”', text: 'Nhận phiếu soi da và trải nghiệm soi da, tư vấn chuyên sâu từ chuyên gia BIODERMA.', image: '/assets/event/zone-2-illu.webp', width: 1000, height: 667 },
-  3: { title: 'GIẢI PHÁP DA SẦU “MỤN”', text: 'Tìm hiểu khoa học chăm da sầu “mụn” và công nghệ độc quyền Fluidactiv™.', image: '/assets/event/zone-3-illu.webp', width: 1000, height: 667 },
+  1: { title: 'BÍ KÍP CHĂM DA SẦU “MỤN”', text: <>Thao tác trên ipad và điền tên để sẵn sàng cùng <strong>BIODERMA</strong> gửi bí kíp đến hội chăm da sầu “mụn”</>, image: '/assets/event/zone-1-illu.webp', width: 1000, height: 563 },
+  2: { title: 'KHOA HỌC DA SẦU “MỤN”', text: <>Nhận phiếu soi da và trải nghiệm soi da tư vấn chuyên sâu từ chuyên gia <strong>BIODERMA</strong>.</>, image: '/assets/event/zone-2-illu.webp', width: 1000, height: 667 },
+  3: { title: 'GIẢI PHÁP DA SẦU “MỤN”', text: <>Tìm hiểu khoa học chăm da sầu “mụn” và công nghệ độc quyền Fluidactiv™.</>, image: '/assets/event/zone-3-illu.webp', width: 1000, height: 667 },
 } as const;
 
 export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
@@ -110,15 +116,21 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
     return () => clearTimeout(timer);
   }, [router, zone, isPreview, isCompletedPreview]);
 
-  const submitCode = async (event: React.FormEvent) => {
-    event.preventDefault(); setError('');
-    if (!/^\d{4}$/.test(code)) { setError('Vui lòng nhập đúng 4 chữ số.'); return; }
+  const verifyCurrentCode = async (value: string) => {
+    if (loading) return;
+    setError('');
+    if (!/^\d{4}$/.test(value)) { setError('Vui lòng nhập đúng 4 chữ số.'); return; }
     setLoading(true);
     try {
-      const result = await verifyZone(zone, code); setParticipant(result.participant); setSuccess(true);
+      const result = await verifyZone(zone, value); setParticipant(result.participant); setSuccess(true);
       if (result.rewardStatus === 'out_of_stock') setOutOfStock(true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Không thể xác nhận mã.'); }
     finally { setLoading(false); }
+  };
+
+  const submitCode = (event: React.FormEvent) => {
+    event.preventDefault();
+    void verifyCurrentCode(code);
   };
 
   const next = () => router.push(zone === 3 ? '/completed' : `/zone/${zone + 1}`);
@@ -141,9 +153,13 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
         <div className="profile-pill">Mã của bạn: <strong>{participant?.publicCode || '...'}</strong></div>
         {!success ? <form className="code-form" onSubmit={submitCode}>
           <label htmlFor="zone-code">Nhập mã trạm</label>
-          <input id="zone-code" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="••••" autoComplete="one-time-code" />
-          {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="primary-button full-button" disabled={loading || code.length !== 4}>{loading ? 'Đang kiểm tra...' : 'Xác nhận mã'}</button>
+          <input id="zone-code" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={code} onChange={(event) => {
+            const value = event.target.value.replace(/\D/g, '').slice(0, 4);
+            setCode(value); setError('');
+            if (value.length === 4) void verifyCurrentCode(value);
+          }} placeholder="" autoComplete="one-time-code" aria-describedby={error ? 'zone-code-error' : undefined} />
+          {error && <p id="zone-code-error" className="form-error" role="alert">{error}</p>}
+          <button className="visually-hidden" disabled={loading || code.length !== 4}>Xác nhận mã</button>
         </form> : <div className={`success-panel${sampleStatus === 'out_of_stock' ? ' out-of-stock' : ''}`} role="status"><span className="success-check" aria-hidden="true"><Check size={16} /></span><span>{sampleMessage}</span></div>}
       </div>
       <div className="zone-actions"><ArtButton asset="back" label="Quay lại" onClick={() => router.back()} /><ArtButton asset="next" label="Tiếp theo" disabled={!success} onClick={next} /></div>
