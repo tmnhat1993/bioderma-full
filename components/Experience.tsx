@@ -95,12 +95,11 @@ export function RegisterFlow() {
 const zoneContent = {
   1: { title: 'BÍ KÍP CHĂM DA SẦU “MỤN”', text: <>Thao tác trên ipad và điền tên để sẵn sàng cùng <strong>BIODERMA</strong> gửi bí kíp đến hội chăm da sầu “mụn”</>, image: '/assets/event/zone-1-illu.webp', width: 1000, height: 563 },
   2: { title: 'KHOA HỌC DA SẦU “MỤN”', text: <>Nhận phiếu soi da và trải nghiệm soi da tư vấn chuyên sâu từ chuyên gia <strong>BIODERMA</strong>.</>, image: '/assets/event/zone-2-illu.webp', width: 1000, height: 667 },
-  3: { title: 'GIẢI PHÁP DA SẦU “MỤN”', text: <>Tìm hiểu khoa học chăm da sầu “mụn” và công nghệ độc quyền Fluidactiv™.</>, image: '/assets/event/zone-3-illu.webp', width: 1000, height: 667 },
+  3: { title: 'GIẢI PHÁP DA SẦU “MỤN”', text: <>Tìm hiểu khoa học chăm da sầu “mụn” và công nghệ độc quyền <strong>Fluidactiv™</strong>.</>, image: '/assets/event/zone-3-illu.webp', width: 1000, height: 667 },
 } as const;
 
 export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
   const router = useRouter(); const searchParams = useSearchParams(); const isPreview = searchParams.get('preview') === '1'; const isCompletedPreview = isPreview && searchParams.get('completed') === '1'; const content = zoneContent[zone];
-  const [participant, setParticipant] = useState<Participant | null>(null);
   const [code, setCode] = useState(''); const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); const [success, setSuccess] = useState(false);
   const [outOfStock, setOutOfStock] = useState(false);
@@ -111,7 +110,6 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
       if (!current) { router.replace('/register'); return; }
       if (current.currentZone < zone - 1) { router.replace(`/zone/${Math.max(1,current.currentZone + 1)}`); return; }
       if (current.currentZone >= zone) setSuccess(true);
-      setParticipant(current);
     }, 0);
     return () => clearTimeout(timer);
   }, [router, zone, isPreview, isCompletedPreview]);
@@ -122,7 +120,7 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
     if (!/^\d{4}$/.test(value)) { setError('Vui lòng nhập đúng 4 chữ số.'); return; }
     setLoading(true);
     try {
-      const result = await verifyZone(zone, value); setParticipant(result.participant); setSuccess(true);
+      const result = await verifyZone(zone, value); setSuccess(true);
       if (result.rewardStatus === 'out_of_stock') setOutOfStock(true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Không thể xác nhận mã.'); }
     finally { setLoading(false); }
@@ -134,15 +132,6 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
   };
 
   const next = () => router.push(zone === 3 ? '/completed' : `/zone/${zone + 1}`);
-  const sampleStatus = zone === 2 ? participant?.zone2SampleStatus : zone === 3 ? participant?.zone3SampleStatus : undefined;
-  const sampleMessage = zone === 1
-    ? 'Đã hoàn thành'
-    : sampleStatus === 'received'
-      ? 'Đã hoàn thành & nhận sampling'
-      : sampleStatus === 'out_of_stock'
-        ? 'Đã hoàn thành · Sampling đã hết'
-        : 'Đã hoàn thành';
-
   return (
     <main className="app-shell"><section className="mobile-stage zone-stage">
       <BrandHeader compact /><ExperienceTitle />
@@ -150,7 +139,6 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
         <h1>{content.title}</h1>
         <div className="zone-visual" aria-hidden="true"><Image src={content.image} alt="" width={content.width} height={content.height} sizes="(max-width: 480px) 88vw, 390px" /></div>
         <p>{content.text}</p>
-        <div className="profile-pill">Mã của bạn: <strong>{participant?.publicCode || '...'}</strong></div>
         {!success ? <form className="code-form" onSubmit={submitCode}>
           <label htmlFor="zone-code">Nhập mã trạm</label>
           <input id="zone-code" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={code} onChange={(event) => {
@@ -160,7 +148,7 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
           }} placeholder="" autoComplete="one-time-code" aria-describedby={error ? 'zone-code-error' : undefined} />
           {error && <p id="zone-code-error" className="form-error" role="alert">{error}</p>}
           <button className="visually-hidden" disabled={loading || code.length !== 4}>Xác nhận mã</button>
-        </form> : <div className={`success-panel${sampleStatus === 'out_of_stock' ? ' out-of-stock' : ''}`} role="status"><span className="success-check" aria-hidden="true"><Check size={16} /></span><span>{sampleMessage}</span></div>}
+        </form> : <div className="success-panel" role="status"><span className="success-check" aria-hidden="true"><Check size={16} /></span><span>Đã hoàn thành</span></div>}
       </div>
       <div className="zone-actions"><ArtButton asset="back" label="Quay lại" onClick={() => router.back()} /><ArtButton asset="next" label="Tiếp theo" disabled={!success} onClick={next} /></div>
       {outOfStock && <div className="modal-backdrop"><section className="consent-modal stock-modal" role="alertdialog" aria-modal="true"><AlertTriangle className="stock-icon" size={40} /><h2>SAMPLE ĐÃ HẾT</h2><p>Rất tiếc, sample tại Zone {zone} đã hết. Kết quả hoàn thành của bạn vẫn được ghi nhận và bạn có thể tiếp tục trải nghiệm.</p><ArtButton asset="understood" label="Đã hiểu" onClick={() => setOutOfStock(false)} /></section></div>}
@@ -171,7 +159,6 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
 export function CompletedFlow() {
   const router = useRouter(); const isPreview = useSearchParams().get('preview') === '1'; const [ready, setReady] = useState(false);
   useEffect(() => { const timer=setTimeout(()=>{const current=isPreview?{id:'preview',publicCode:'BDM-DEMO',eventDate:'2026-09-12',consent:true,gender:'female' as const,createdAt:new Date().toISOString(),currentZone:3}:getLocalParticipant();if(!current){router.replace('/register');return;}if(current.currentZone < 3){router.replace(`/zone/${Math.max(1,current.currentZone + 1)}`);return;}setReady(true);},0);return()=>clearTimeout(timer); },[router,isPreview]);
-  const reviewZone = (zone: 1 | 2 | 3) => router.push(`/zone/${zone}${isPreview ? '?preview=1&completed=1' : ''}`);
   if (!ready) return null;
-  return <main className="app-shell"><section className="mobile-stage completed-stage"><BrandHeader compact /><ExperienceTitle /><div className="complete-card"><div className="complete-icon"><Image src="/assets/event/checked-illu.webp" alt="" width={480} height={346} priority /></div><h1>Chúc mừng bạn</h1><p>Đã hoàn thành trải nghiệm tại<br /><strong>SÉBIUM REBALANCE LAB</strong></p></div><div className="completed-review"><p>Quay lại các màn hình đã hoàn thành</p><div className="completed-zone-links">{([1,2,3] as const).map((zone) => <button type="button" className="secondary-button" key={zone} onClick={() => reviewZone(zone)}><Check size={14} /> Zone {zone}</button>)}</div></div><div className="stage-art complete-art" aria-hidden="true" /></section></main>;
+  return <main className="app-shell"><section className="mobile-stage completed-stage"><BrandHeader compact /><ExperienceTitle /><div className="complete-card"><div className="complete-icon"><Image src="/assets/event/checked-illu.webp" alt="" width={480} height={346} priority /></div><h1>Chúc mừng bạn</h1><p>Đã hoàn thành trải nghiệm tại<br /><strong>SÉBIUM REBALANCE LAB</strong></p></div><div className="completed-actions"><ArtButton asset="back" label="Quay lại" onClick={() => router.back()} /></div><div className="stage-art complete-art" aria-hidden="true" /></section></main>;
 }
