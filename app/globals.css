@@ -75,11 +75,11 @@ legend span { color:var(--lab-green); }
 .gender-field { display:grid; grid-template-columns:126px 1fr; align-items:center; }
 .field-invalid legend,.field-invalid>p { color:#d83f47; }
 .field-invalid .choice-row label { border-color:#d83f47; }
-.consent-choice { display: flex !important; align-items: flex-start; gap: 10px; color: var(--bioderma-blue) !important; font-size:13px !important; font-weight: 400 !important; line-height: 1.45; cursor: pointer; }
+.consent-choice { display: flex !important; align-items: flex-start; gap: 10px; margin-bottom: 8px; color: var(--bioderma-blue) !important; font-size:13px !important; font-weight: 400 !important; line-height: 1.45; cursor: pointer; }
 .consent-choice input { position: absolute; opacity: 0; }
 .consent-choice>span { display: grid; flex: 0 0 19px; height: 19px; place-items: center; margin-top: -1px; color: transparent !important; border: 1px solid var(--lab-green); background: #fff; }
 .consent-choice:has(input:checked)>span { color: #fff !important; background: var(--lab-green); }
-.privacy-note { margin: -8px 0 0; color: var(--bioderma-blue); font-size: 12px; line-height: 1.45; }
+.privacy-note { margin: 0; color: var(--bioderma-blue); font-size: 12px; line-height: 1.45; }
 .form-error { margin: 0; color: #c63f3f; font-size: 11px; line-height: 1.4; text-align: center; }
 .submit-button { width: min(72%,280px); margin-top:15px; justify-self: center; }
 .full-button { width: 100%; }
