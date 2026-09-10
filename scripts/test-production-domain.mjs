@@ -159,7 +159,7 @@ try {
 
   const flow3 = await register(3, { consent: true, fullName: '[E2E] Dừng Zone 1', phone: '0900000012', gender: 'female', ageRange: '25-45' });
   const skip = await verify(flow3, 2, codes.zone2);
-  check('Không cho bỏ qua Zone trước', skip.status !== 200, `HTTP ${skip.status}`);
+  check('Không cho bỏ qua Zone trước', skip.status === 400, `HTTP ${skip.status}`);
   const partial = await verify(flow3, 1, codes.zone1);
   check('Luồng dừng giữa chừng giữ đúng Zone 1', partial.status === 200 && flow3.participant.currentZone === 1);
 

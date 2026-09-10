@@ -30,5 +30,5 @@ export async function POST(request: NextRequest) {
       transaction.update(participantRef,updates); return {participant:participantFromData(participantSnap.id,{...participant,...updates}),rewardStatus,remainingStock};
     });
     return NextResponse.json(result);
-  }catch(error){const message=error instanceof Error?error.message:'Không thể xác nhận mã.';const status=message.includes('chính xác')?400:500;return NextResponse.json({error:message},{status});}
+  }catch(error){const message=error instanceof Error?error.message:'Không thể xác nhận mã.';const status=message.includes('chính xác')||message.includes('zone trước đó')?400:500;return NextResponse.json({error:message},{status});}
 }
