@@ -1,0 +1,24 @@
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, Gift, LoaderCircle, RefreshCw, Search, X } from 'lucide-react';
+import { EXTRA_GIFTS, type ExtraGift, type GiftGuest } from '@/lib/extra-gifts';
+import { formatEventDate } from '@/lib/constants';
+const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+export function PgExtraGifts({accessKey}:{accessKey:string}) {
+  const currentDate=useRef('');
+  const [guests,setGuests]=useState<GiftGuest[]>([]),[date,setDate]=useState(''),[query,setQuery]=useState('');
+  const [selected,setSelected]=useState<GiftGuest|null>(null),[gift,setGift]=useState<ExtraGift|''>('');
+  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+  const load=useCallback(async()=>{
+    try {const r=await fetch('/api/pg-extra',{headers:{'x-pg-key':accessKey},cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error);setGuests(data.guests);if(currentDate.current&&currentDate.current!==data.date){setSelected(null);setMessage('Đã chuyển sang ngày mới.');}currentDate.current=data.date;setDate(data.date);setError('');}
+    catch(e){setError((e as Error).message);}finally{setLoading(false);}
+  },[accessKey]);
+  useEffect(()=>{const initial=setTimeout(()=>void load(),0);const id=setInterval(()=>{if(!document.hidden)void load();},15000);const focus=()=>void load();window.addEventListener('focus',focus);return()=>{clearTimeout(initial);clearInterval(id);window.removeEventListener('focus',focus);};},[load]);
+  const save=async()=>{
+    if(!selected||!gift||saving)return;setSaving(true);setError('');
+    try {const r=await fetch('/api/pg-extra',{method:'POST',headers:{'Content-Type':'application/json','x-pg-key':accessKey},body:JSON.stringify({participantId:selected.id,gift,date,revision:selected.extraGift?.revision||0})});const data=await r.json();if(!r.ok)throw Error(data.error);setMessage(`Đã lưu ${gift} · ${selected.fullName||selected.publicCode}`);setSelected(null);await load();}
+    catch(e){setError((e as Error).message);setSelected(null);await load();setError((e as Error).message);}finally{setSaving(false);}
+  };
+  const list=guests.filter(p=>normalize(`${p.fullName||''} ${p.publicCode}`).includes(normalize(query.trim())));
+  return <main className="pg-shell"><header className="pg-header"><span>BIODERMA <small>PB / PG</small></span><h1>Quà đặc biệt</h1><p>{date?formatEventDate(date):'Đang tải ngày hoạt động…'} · Giờ Việt Nam</p></header><section className="pg-content"><div className="pg-summary"><span><strong>{guests.length}</strong> Hoàn thành 3 Zone</span><span><strong>{guests.filter(p=>p.extraGift).length}</strong> Đã nhận quà</span></div><label className="pg-search"><Search size={20}/><input aria-label="Tìm khách" placeholder="Tìm tên hoặc mã khách…" value={query} onChange={e=>setQuery(e.target.value)}/></label><div className="pg-list-heading"><p>Khách mới nhất · {list.length}</p><button onClick={()=>void load()} aria-label="Tải lại"><RefreshCw size={17}/></button></div>{message&&<p className="pg-notice" role="status"><Check size={18}/>{message}</p>}{error&&<p className="pg-error" role="alert">{error}</p>}{loading?<p className="pg-empty">Đang tải danh sách…</p>:list.length?list.map(p=><article className="pg-guest" key={p.id}><div><h2>{p.fullName||'Khách ẩn danh'}</h2><small>{p.publicCode} · {new Date(p.createdAt).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}</small><p className={p.extraGift?'pg-received':'pg-pending'}>{p.extraGift?<><Check size={14}/>{p.extraGift.gift}</>:'Chưa nhận quà đặc biệt'}</p></div><button className={p.extraGift?'pg-edit':'pg-choose'} onClick={()=>{setSelected(p);setGift(p.extraGift?.gift||'');setError('');setMessage('');}}>{p.extraGift?'Sửa quà':'Chọn quà'}</button></article>):<p className="pg-empty">{query?'Không tìm thấy khách phù hợp.':'Chưa có khách hoàn thành đủ 3 Zone hôm nay.'}</p>}</section>{selected&&<div className="pg-backdrop"><section className="pg-dialog" role="dialog" aria-modal="true" aria-labelledby="gift-title"><button className="pg-close" disabled={saving} aria-label="Đóng" onClick={()=>setSelected(null)}><X/></button><Gift className="pg-gift-icon"/><h2 id="gift-title">{selected.extraGift?'Đổi quà đặc biệt':'Chọn quà đặc biệt'}</h2><p>{selected.fullName||'Khách ẩn danh'} · {selected.publicCode}</p><div className="pg-options">{EXTRA_GIFTS.map(item=><label key={item} className={gift===item?'selected':''}><input type="radio" name="extra-gift" value={item} checked={gift===item} disabled={saving} onChange={()=>setGift(item)}/>{item}</label>)}</div><button className="pg-save" disabled={!gift||saving} onClick={()=>void save()}>{saving?<><LoaderCircle className="button-spinner" size={18}/>Đang lưu…</>:'Lưu quà'}</button></section></div>}</main>;
+}

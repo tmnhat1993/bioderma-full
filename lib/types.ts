@@ -3,6 +3,7 @@ export type AgeRange = '18-24' | '25-45' | '45+';
 export type SampleStatus = 'not_applicable' | 'received' | 'out_of_stock';
 
 export type Participant = {
+  extraGift?: import('./extra-gifts').ExtraGiftRecord;
   id: string;
   publicCode: string;
   eventDate: string;

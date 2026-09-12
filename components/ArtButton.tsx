@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { LoaderCircle } from 'lucide-react';
 import type { ButtonHTMLAttributes } from 'react';
 
 const assets = {
@@ -13,14 +14,15 @@ const assets = {
 
 type AssetName = keyof typeof assets;
 type SharedProps = { asset: AssetName; label: string; className?: string };
+type ArtButtonProps = SharedProps & ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean };
 
 function Artwork({ asset }: { asset: AssetName }) {
   const image = assets[asset];
   return <Image src={image.src} alt="" width={image.width} height={image.height} sizes="(max-width: 480px) 70vw, 320px" />;
 }
 
-export function ArtButton({ asset, label, className = '', ...props }: SharedProps & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props} className={`art-button art-button-${asset} ${className}`.trim()} aria-label={label}><Artwork asset={asset} /><span className="visually-hidden">{label}</span></button>;
+export function ArtButton({ asset, label, className = '', loading = false, disabled, ...props }: ArtButtonProps) {
+  return <button {...props} disabled={disabled || loading} className={`art-button art-button-${asset} ${className}`.trim()} aria-label={label} aria-busy={loading}><Artwork asset={asset} />{loading && <span className="art-button-loader" aria-hidden="true"><LoaderCircle size={18} /></span>}<span className="visually-hidden">{label}</span></button>;
 }
 
 export function ArtLink({ asset, label, href, className = '' }: SharedProps & { href: string }) {

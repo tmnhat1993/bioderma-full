@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { AlertTriangle, Check } from 'lucide-react';
+import { AlertTriangle, Check, LoaderCircle } from 'lucide-react';
+import { ExtraGiftNotice } from './ExtraGiftNotice';
 import { BrandHeader } from './BrandHeader';
 import { ArtButton } from './ArtButton';
 import { getLocalParticipant, registerParticipant, verifyZone } from '@/lib/client-api';
@@ -82,11 +83,11 @@ export function RegisterFlow() {
             <p>Dữ liệu được bảo mật, chỉ nhân sự hoặc đơn vị xử lý dữ liệu được ủy quyền mới được tiếp cận cho mục đích vận hành chương trình. Chúng tôi không bán hoặc chia sẻ thông tin cho bên thứ ba nếu không có sự đồng ý của bạn hoặc yêu cầu hợp pháp của cơ quan có thẩm quyền.</p>
             <p>Bạn có quyền yêu cầu kiểm tra, cập nhật, rút lại đồng ý hoặc xóa thông tin cá nhân theo quy định pháp luật Việt Nam về bảo vệ dữ liệu cá nhân.</p>
             <div className="modal-actions">
-              <ArtButton asset="understood" label={loading ? 'Đang lưu...' : 'Đã hiểu'} disabled={loading} onClick={() => confirmConsent(true)} />
+              <ArtButton asset="understood" label={loading ? 'Đang lưu...' : 'Đã hiểu'} loading={loading} onClick={() => confirmConsent(true)} />
             </div>
           </section>
         </div>}
-        {anonymousOpen && <div className="modal-backdrop"><section className="consent-modal anonymous-modal" role="dialog" aria-modal="true" aria-labelledby="anonymous-title"><Image src="/assets/event/lightning.webp" alt="" width={240} height={316} /><h2 id="anonymous-title">KHẢO SÁT ẨN DANH</h2><p>Thông tin cá nhân của bạn sẽ được hệ thống ghi nhận là khách hàng ẩn danh. Chúng tôi sẽ không lưu lại thông tin này trong hệ thống.</p><ArtButton asset="anonymous" label={loading ? 'Đang lưu...' : 'Đã hiểu & Tham gia trải nghiệm'} disabled={loading} onClick={() => confirmConsent(false)} /></section></div>}
+        {anonymousOpen && <div className="modal-backdrop"><section className="consent-modal anonymous-modal" role="dialog" aria-modal="true" aria-labelledby="anonymous-title"><Image src="/assets/event/lightning.webp" alt="" width={240} height={316} /><h2 id="anonymous-title">KHẢO SÁT ẨN DANH</h2><p>Thông tin cá nhân của bạn sẽ được hệ thống ghi nhận là khách hàng ẩn danh. Chúng tôi sẽ không lưu lại thông tin này trong hệ thống.</p><ArtButton asset="anonymous" label={loading ? 'Đang lưu...' : 'Đã hiểu & Tham gia trải nghiệm'} loading={loading} onClick={() => confirmConsent(false)} /></section></div>}
       </section>
     </main>
   );
@@ -141,11 +142,11 @@ export function ZoneFlow({ zone }: { zone: 1 | 2 | 3 }) {
         <p>{content.text}</p>
         {!success ? <form className="code-form" onSubmit={submitCode}>
           <label htmlFor="zone-code">Nhập mã trạm</label>
-          <input id="zone-code" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={code} onChange={(event) => {
+          <div className="code-input-wrap"><input id="zone-code" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={code} disabled={loading} onChange={(event) => {
             const value = event.target.value.replace(/\D/g, '').slice(0, 4);
             setCode(value); setError('');
             if (value.length === 4) void verifyCurrentCode(value);
-          }} placeholder="" autoComplete="one-time-code" aria-describedby={error ? 'zone-code-error' : undefined} />
+          }} placeholder="" autoComplete="one-time-code" aria-describedby={error ? 'zone-code-error' : undefined} />{loading && <LoaderCircle className="code-input-spinner" size={17} aria-hidden="true" />}</div>
           {error && <p id="zone-code-error" className="form-error" role="alert">{error}</p>}
           <button className="visually-hidden" disabled={loading || code.length !== 4}>Xác nhận mã</button>
         </form> : <div className="success-panel" role="status"><span className="success-check" aria-hidden="true"><Check size={16} /></span><span>Đã hoàn thành</span></div>}
@@ -160,5 +161,5 @@ export function CompletedFlow() {
   const router = useRouter(); const isPreview = useSearchParams().get('preview') === '1'; const [ready, setReady] = useState(false);
   useEffect(() => { const timer=setTimeout(()=>{const current=isPreview?{id:'preview',publicCode:'BDM-DEMO',eventDate:'2026-09-12',consent:true,gender:'female' as const,createdAt:new Date().toISOString(),currentZone:3}:getLocalParticipant();if(!current){router.replace('/register');return;}if(current.currentZone < 3){router.replace(`/zone/${Math.max(1,current.currentZone + 1)}`);return;}setReady(true);},0);return()=>clearTimeout(timer); },[router,isPreview]);
   if (!ready) return null;
-  return <main className="app-shell"><section className="mobile-stage completed-stage"><BrandHeader compact /><ExperienceTitle /><div className="complete-card"><div className="complete-icon"><Image src="/assets/event/checked-illu.webp" alt="" width={480} height={346} priority /></div><h1>Chúc mừng bạn</h1><p>Đã hoàn thành trải nghiệm tại<br /><strong>SÉBIUM REBALANCE LAB</strong></p></div><div className="completed-actions"><ArtButton asset="back" label="Quay lại" onClick={() => router.back()} /></div><div className="stage-art complete-art" aria-hidden="true" /></section></main>;
+  return <main className="app-shell"><section className="mobile-stage completed-stage"><BrandHeader compact /><ExperienceTitle /><div className="complete-card"><div className="complete-icon"><Image src="/assets/event/checked-illu.webp" alt="" width={480} height={346} priority /></div><h1>Chúc mừng bạn</h1><p>Đã hoàn thành trải nghiệm tại<br /><strong>SÉBIUM REBALANCE LAB</strong></p><ExtraGiftNotice /></div><div className="completed-actions"><ArtButton asset="back" label="Quay lại" onClick={() => router.back()} /></div><div className="stage-art complete-art" aria-hidden="true" /></section></main>;
 }

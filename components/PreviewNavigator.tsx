@@ -24,6 +24,7 @@ export function PreviewNavigator() {
   const [open, setOpen] = useState(false);
   const current = `${pathname}${params.size ? `?${params.toString()}` : ''}`;
 
+  if (pathname.startsWith('/pg-extra/')) return null;
   return <aside className={`preview-navigator ${open ? 'open' : ''}`} aria-label="Điều hướng xem nhanh màn hình">
     <button className="preview-toggle" type="button" onClick={() => setOpen(!open)} aria-expanded={open}>
       {open ? <X size={17}/> : <Eye size={17}/>}<span>{open ? 'Đóng' : 'Xem screens'}</span>
